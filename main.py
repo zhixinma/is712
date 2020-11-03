@@ -55,7 +55,7 @@ test_transform = transforms.Compose([
 ])
 
 train_set = ImgDataset(train_x, train_mean, train_var, transform=train_transform)
-train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=False)
+train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
 valid_set = ImgDataset(valid_x, valid_mean, valid_var, transform=train_transform)
 valid_loader = DataLoader(valid_set, batch_size=batch_size, shuffle=False)
 test_set = ImgDataset(test_x, transform=test_transform)
@@ -68,7 +68,12 @@ if discrete_cls:
 else:
     mean_loss, var_loss = nn.MSELoss(), nn.MSELoss()
 
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+# optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+
+# Non-Separated ResNet
+optimizer = torch.optim.Adam([{'params': model.net.mlp.parameters(), 'lr': 1e-3},
+                              {'params': model.net.mlp_var.parameters(), 'lr': 1e-3},
+                              {'params': model.net.resnet.parameters(), 'lr': 1e-4}], weight_decay=5e-4)
 best_result = 1e2
 
 converge_epoch_count = 0

@@ -3,17 +3,17 @@ Global Setting of project IS712
 """
 
 toy = False  # Test code with toy data
-separate = True  # Separate parameters of mean and variance prediction
-mean_model_name = "cnn"
-var_model_name = "cnn"
+separate = False  # Separate parameters of mean and variance prediction
+mean_model_name = "resnet"
+var_model_name = ""
 update_resnet = True
 use_fea = False  # Use handcraft feature (e.g. RGB Histogram)
 discrete_reg = False  # Use regression and map result into discrete_means/discrete_vars
 discrete_cls = False  # Use classification with classes in discrete_means/discrete_vars
 IMG_SHAPE = (256, 256, 3)
-batch_size = 128 if not toy else 2
-num_epoch = 200 if not toy else 10
-gpu_num = 3
+batch_size = 16 if not toy else 2
+num_epoch = 100 if not toy else 10
+gpu_num = 7
 val_fold_id = 0
 round_num = 5
 CONVERGE_INCREMENT_THRESHOLD = 1e-5  # Increment threshold for early stopping

@@ -11,14 +11,20 @@ class FoodNet(nn.Module):
     def __init__(self):
         super(FoodNet, self).__init__()
         model_dict = {"resnet": ResNet, "cnn": ThreeLayerCNN}
-        assert mean_model_name in model_dict and var_model_name in model_dict, \
-            "Mean:%s Var:%s" % (mean_model_name, var_model_name)
-        self.mean_net = model_dict[mean_model_name]()
-        self.var_net = model_dict[var_model_name]() if separate else self.mean_net
+        assert mean_model_name in model_dict, "Mean:%s" % mean_model_name
+        if separate:
+            assert var_model_name in model_dict, "Var:%s" % var_model_name
+            self.mean_net = model_dict[mean_model_name]()
+            self.var_net = model_dict[var_model_name]()
+        else:
+            self.net = model_dict[mean_model_name](separate)
 
     def forward(self, img, hist):
-        mean_out = self.mean_net(img, hist)
-        var_out = self.var_net(img, hist)
+        if separate:
+            mean_out = self.mean_net(img, hist)
+            var_out = self.var_net(img, hist)
+        else:
+            mean_out, var_out = self.net(img, hist)
 
         if discrete_cls:
             pass  # Cross Entropy Loss includes softmax function.
@@ -27,10 +33,11 @@ class FoodNet(nn.Module):
 
 class ResNet(nn.Module):
     # https://www.programmersought.com/article/3742330137/
-    def __init__(self):
+    def __init__(self, _separate=True):
         super(ResNet, self).__init__()
-        self.net = torchvision.models.resnet18(pretrained=True)
-        for param in self.net.parameters():
+        self.separate = _separate
+        self.resnet = torchvision.models.resnet18(pretrained=True)
+        for param in self.resnet.parameters():
             param.reguires_grad = update_resnet
 
         d_out_mean = MEAN_CLS_NUM if discrete_cls else 1
@@ -44,21 +51,24 @@ class ResNet(nn.Module):
             d_in += 128
 
         self.mlp = nn.Sequential(
-            nn.Linear(d_in, 64),
-            nn.ReLU(),
-            nn.Linear(64, d_out_mean))
+            nn.Linear(d_in, d_out_mean))
+
+        if not self.separate:
+            d_out_var = VAR_CLS_NUM if discrete_cls else 1
+            self.mlp_var = nn.Sequential(
+                nn.Linear(d_in, d_out_var))
 
     def forward(self, img, hist):
-        output = self.net.conv1(img)
-        output = self.net.bn1(output)
-        output = self.net.relu(output)
-        output = self.net.maxpool(output)
+        output = self.resnet.conv1(img)
+        output = self.resnet.bn1(output)
+        output = self.resnet.relu(output)
+        output = self.resnet.maxpool(output)
 
-        output = self.net.layer1(output)
-        output = self.net.layer2(output)
-        output = self.net.layer3(output)
-        output = self.net.layer4(output)
-        output = self.net.avgpool(output)
+        output = self.resnet.layer1(output)
+        output = self.resnet.layer2(output)
+        output = self.resnet.layer3(output)
+        output = self.resnet.layer4(output)
+        output = self.resnet.avgpool(output)
         output = torch.flatten(output, start_dim=1)
 
         if use_fea:
@@ -66,17 +76,19 @@ class ResNet(nn.Module):
             hist_out = self.hist_fc(hist_out)
             output = torch.cat([output, hist_out], dim=1)
 
-        output = self.mlp(output)
-        output = torch.sigmoid(output) * 10
+        res = self.mlp(output)
+        if self.separate:
+            return res
 
-        if discrete_cls:
-            pass  # Cross Entropy Loss includes softmax function.
-        return output
+        mean = res
+        var = self.mlp_var(output)
+        return mean, var
 
 
 class ThreeLayerCNN(nn.Module):
-    def __init__(self):
+    def __init__(self, _separate=True):
         super(ThreeLayerCNN, self).__init__()
+        self.separate = _separate
         self.conv1 = nn.Conv2d(3, 16, 3)
         self.conv2 = nn.Conv2d(16, 32, 3)
         self.conv3 = nn.Conv2d(32, 64, 3)
@@ -99,11 +111,18 @@ class ThreeLayerCNN(nn.Module):
                 nn.Linear(256, 128))
             d_in += 128
 
-        self.var = nn.Sequential(
+        self.mlp = nn.Sequential(
             nn.Linear(d_in, 128),
             nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(128, d_out_var))
+
+        if not self.separate:
+            self.mlp_var = nn.Sequential(
+                nn.Linear(d_in, 128),
+                nn.ReLU(),
+                nn.Dropout(0.2),
+                nn.Linear(128, d_out_var))
 
     def forward(self, img, hist):
         output = self.conv1(img)
@@ -123,8 +142,13 @@ class ThreeLayerCNN(nn.Module):
             hist = self.hist_fc(hist)
             output = torch.cat([output, hist], dim=1)
 
-        var = self.var(output)
-        return var
+        res = self.mlp(output)
+        if self.separate:
+            return res
+
+        mean = res
+        var = self.mlp_var(output)
+        return mean, var
 
 
 def run_epoch(_model, data_loader, tag, optimizer=None, mean_loss=None, var_loss=None):
