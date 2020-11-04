@@ -1,10 +1,16 @@
+from dataloader import read_label
 
-# fp1 = "submission_1.txt"
-# fp2 = "submission_2.txt"
-# fp3 = "submission_0.txt"
-# # fp4 = "submission_4.txt"
-# fp = "submission.txt"
-#
+
+fp1 = "submission_1.txt"
+fp2 = "submission_2.txt"
+fp3 = "submission_0.txt"
+fp4 = "submission_4.txt"
+fp = "submission.txt"
+
+mean_1, var_1 = read_label(fp1)
+for m, v in zip(mean_1, var_1):
+    print(m, v)
+
 # with open(fp1, "r") as f1:
 #     res1 = f1.readlines()
 #
@@ -32,6 +38,8 @@
 #
 #                     print(str(round(mean, 5))+'\t'+str(round(var, 5)))
 #                     # f.write(str(round(mean, 5))+'\t'+str(round(var, 5))+"\n")
+#
+
 
 
 # from dataloader import read_label
@@ -69,13 +77,3 @@
 #             # print(str(round(mean, 5)) + '\t' + str(round(var, 5)))
 #             f.write(str(round(mean, 5))+'\t'+str(round(var, 5))+"\n")
 #
-
-from dataloader import read_label
-from const import *
-import os
-
-image_dir = sorted([file for file in os.listdir(train_dir) if "txt" not in file])
-train_y = read_label(train_dir)
-train_means, train_vars, _, _, _ = zip(*train_y)
-print(list(set(train_means)))
-print(list(set(train_vars)))

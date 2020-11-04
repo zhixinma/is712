@@ -2,27 +2,29 @@
 Global Setting of project IS712
 """
 
-toy = False  # Test code with toy data
-separate = False  # Separate parameters of mean and variance prediction
-mean_model_name = "resnet"
-var_model_name = ""
-update_resnet = True
-use_fea = False  # Use handcraft feature (e.g. RGB Histogram)
-discrete_reg = False  # Use regression and map result into discrete_means/discrete_vars
-discrete_cls = False  # Use classification with classes in discrete_means/discrete_vars
+TOY = False  # Test code with toy data
+SEPARATE = False  # Separate parameters of mean and variance prediction
+MEAN_MODEL_NAME = "resnet"
+VAR_MODEL_NAME = ""
+UPDATE_RESNET = True
+DISCRETE_REG = False  # Use regression and map result into discrete_means/discrete_vars
+DISCRETE_CLS = False  # Use classification with classes in discrete_means/discrete_vars
 IMG_SHAPE = (256, 256, 3)
-batch_size = 16 if not toy else 2
-num_epoch = 100 if not toy else 10
-gpu_num = 7
-val_fold_id = 0
-round_num = 5
+BATCH_SIZE = 16 if not TOY else 2
+EPOCH_NUM = 100 if not TOY else 10
+GPU_NUM = 2
+VAL_FOLD_ID = 0
+ROUND_NUM = 5
 CONVERGE_INCREMENT_THRESHOLD = 1e-5  # Increment threshold for early stopping
 CONVERGE_EPOCH_NUM_THRESHOLD = 10  # Epoch number threshold for early stopping
-best_model_path = "./model/best_model_fold_%d" % val_fold_id
-res_path = "submission_%d.txt" % val_fold_id
+FINE_TUNE_LR = 1e-4
+NEW_PARAM_LR = 1e-3
+WEIGHT_DECAY = 5e-4
+BEST_MODEL_PATH = "./model/best_model_fold_%d" % VAL_FOLD_ID
+RES_PATH = "submission_%d.txt" % VAL_FOLD_ID
 device = 'cuda'
-train_dir = './dataset/train'
-test_dir = './dataset/validation'
+TRAIN_DIR = './dataset/train'
+TEST_DIR = './dataset/validation'
 
 discrete_means = [1.67, 2.33, 2.67, 3.33, 3.67, 4.33, 4.67, 5.0, 5.33, 5.67, 6.0, 6.33, 6.67, 7.0, 7.33, 7.67, 8.0,
                   8.33, 8.66, 8.67, 9.33]
@@ -35,21 +37,23 @@ MEAN_CLS_NUM = len(discrete_means)
 VAR_CLS_NUM = len(discrete_vars)
 
 head = "%30s | "
-print(head % "Configuration")
-print(head % "toy", toy)
-print(head % "mean_model_name", mean_model_name)
-print(head % "var_model_name", var_model_name)
-print(head % "separate", separate)
-print(head % "update_resnet", update_resnet)
+print(head % "CONFIGURATION")
+print(head % "TOY", TOY)
+print(head % "MEAN_MODEL_NAME", MEAN_MODEL_NAME)
+print(head % "VAR_MODEL_NAME", VAR_MODEL_NAME)
+print(head % "SEPARATE", SEPARATE)
+print(head % "UPDATE_RESNET", UPDATE_RESNET)
 print(head % "CONVERGE_INCREMENT_THRESHOLD", CONVERGE_INCREMENT_THRESHOLD)
 print(head % "CONVERGE_EPOCH_NUM_THRESHOLD", CONVERGE_EPOCH_NUM_THRESHOLD)
-print(head % "use_hist", use_fea)
-print(head % "discrete_reg", discrete_reg)
-print(head % "discrete_cls", discrete_cls)
-print(head % "batch_size", batch_size)
-print(head % "num_epoch", num_epoch)
-print(head % "val_fold_id", val_fold_id)
-print(head % "gpu_num", gpu_num)
-print(head % "best_model_path", best_model_path)
-print(head % "res_path", res_path)
+print(head % "FINE_TUNE_LR", FINE_TUNE_LR)
+print(head % "NEW_PARAM_LR", NEW_PARAM_LR)
+print(head % "WEIGHT_DECAY", WEIGHT_DECAY)
+print(head % "DISCRETE_REG", DISCRETE_REG)
+print(head % "DISCRETE_CLS", DISCRETE_CLS)
+print(head % "BATCH_SIZE", BATCH_SIZE)
+print(head % "EPOCH_NUM", EPOCH_NUM)
+print(head % "VAL_FOLD_ID", VAL_FOLD_ID)
+print(head % "GPU_NUM", GPU_NUM)
+print(head % "BEST_MODEL_PATH", BEST_MODEL_PATH)
+print(head % "RES_PATH", RES_PATH)
 print("")
