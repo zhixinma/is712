@@ -4,7 +4,10 @@ log/
 model/
 data/
 
+main_v2.py
 *.sh
+
+submission*.txt
 
 # IDE
 codestyle
