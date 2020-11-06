@@ -3,10 +3,10 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 import os
-import random
 from const import *
 from progressbar import ProgressBar
 from utils import discrete_label
+from utils import n_fold_split
 
 
 class ImgDataset(Dataset):
@@ -37,8 +37,40 @@ class ImgDataset(Dataset):
             return img
 
 
-def read_img(path):
-    image_dir = sorted([file for file in os.listdir(path) if "txt" not in file])
+class ImgDataset2(Dataset):
+    def __init__(self, filepath, transform, train=True, valid=False):
+        self.train = train
+        self.valid = valid
+        self.img = read_img(filepath, train=train)
+        self.transform = transform
+
+        if self.train:
+            self.mean_y, self.var_y, _, _, _ = zip(*read_label(filepath))
+            self.mean_y = np.array(self.mean_y)
+            self.var_y = np.array(self.var_y)
+
+        if self.valid:
+            train_ids, valid_ids = n_fold_split(len(self.img))
+            self.img = self.img[valid_ids]
+            self.mean_y = self.mean_y[valid_ids]
+            self.var_y = self.var_y[valid_ids]
+
+    def __len__(self):
+        return len(self.img)
+
+    def __getitem__(self, index):
+        img = self.transform(self.img[index])
+        if not self.train:
+            return img
+
+        mean_y = self.mean_y[index]
+        var_y = self.var_y[index]
+        return img, mean_y, var_y
+
+
+def read_img(path, train=False):
+    data_size = 3000 if train else 1500
+    image_dir = ["%s.jpg" % i for i in range(data_size)]
     image_dir = image_dir[:20] if TOY else image_dir
     _data_size = len(image_dir)
     images = np.zeros((_data_size, IMG_SHAPE[0], IMG_SHAPE[1], IMG_SHAPE[2]), dtype=np.uint8)
@@ -56,19 +88,35 @@ def read_label(path):
     with open(os.path.join(path, "label_train.txt"), 'r') as f:
         lines = f.readlines()
     y = [[float(e) for e in line.split('\t')] for line in lines]
+    mean, var, _, _, _ = zip(*y)
     return y
 
 
-def n_fold_split(_data_size, _val_fold_id=0, _fold_num=10):
-    fold_size = _data_size // _fold_num
-    ids = list(range(_data_size))
-    random.seed(2020)
-    random.shuffle(ids)
-    st, ed = 0, _data_size
-    st_val = _val_fold_id * fold_size
-    ed_val = st_val + fold_size
-    valid = ids[st_val:ed_val]
-    train = ids[st:st_val] + ids[ed_val:ed]
-    # train = ids
-    return train, valid
+def knn_split(train, test):
+    def dist(sample, batch):
+        batch_size = batch.shape[0]
+        d = np.abs(batch - sample).reshape(batch_size, -1).mean(axis=1)
+        return d
+    img_trn = read_img(train, train=True)
+    img_tst = read_img(test, train=False)
+    trn_size, tst_size = len(img_trn), len(img_tst)
+    valid_score = {}
+    _bar = ProgressBar(max_value=tst_size)
+    for i in range(tst_size):
+        _bar.update(i+1)
+        dists = dist(img_tst[i], img_trn)
+        best_j = dists.argmin()
+        if best_j not in valid_score:
+            valid_score[best_j] = 1e10
+        valid_score[best_j] = dists[best_j] if dists[best_j] < valid_score[best_j] else valid_score[best_j]
+    top = [k for k in sorted(valid_score, key=valid_score.get)]
+    valid_id = top[:trn_size//10]
+    train_id = [i for i in range(trn_size) if i not in valid_id]
+    return train_id, valid_id
+
+
+if __name__ == "__main__":
+    train_ids, valid_ids = knn_split(TRAIN_DIR, VALID_DIR)
+    print(train_ids)
+    print(valid_ids)
 

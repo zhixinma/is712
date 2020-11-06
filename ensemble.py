@@ -1,79 +1,107 @@
-from dataloader import read_label
+import numpy as np
 
 
-fp1 = "submission_1.txt"
-fp2 = "submission_2.txt"
-fp3 = "submission_0.txt"
-fp4 = "submission_4.txt"
-fp = "submission.txt"
-
-mean_1, var_1 = read_label(fp1)
-for m, v in zip(mean_1, var_1):
-    print(m, v)
-
-# with open(fp1, "r") as f1:
-#     res1 = f1.readlines()
-#
-#     with open(fp2, "r") as f2:
-#         res2 = f2.readlines()
-#
-#         with open(fp3, "r") as f3:
-#             res3 = f3.readlines()
-#
-#             # with open(fp4, "r") as f4:
-#             #     res4 = f4.readlines()
-#
-#             with open(fp, 'w') as f:
-#
-#                 # for sp1, sp2, sp3, sp4 in zip(res1, res2, res3, res4):
-#                 #     mean = [float(i.split("\t")[0]) for i in [sp1, sp2, sp3, sp4]]
-#
-#                 for sp1, sp2, sp3 in zip(res1, res2, res3):
-#                     res = [[float(n) for n in i.split("\t")] for i in [sp1, sp2, sp3]]
-#                     _mean, _var = zip(*res)
-#                     mean = sum(_mean) / len(_mean)
-#                     var = sum(_var) / len(_var)
-#
-#                     # std = 1.21255
-#
-#                     print(str(round(mean, 5))+'\t'+str(round(var, 5)))
-#                     # f.write(str(round(mean, 5))+'\t'+str(round(var, 5))+"\n")
-#
+def read_label(path):
+    with open(path, 'r') as f:
+        lines = f.readlines()
+    separator = "\t" if "\t" in lines[0] else " "
+    y = [[float(e) for e in line.split(separator)] for line in lines]
+    return y
 
 
-
-# from dataloader import read_label
-# from const import *
-# import os
-#
-# image_dir = sorted([file for file in os.listdir(train_dir) if "txt" not in file])
-# train_y = read_label(train_dir)
-# train_means, train_vars, _, _, _ = zip(*train_y)
-#
-# for i in range(len(image_dir)):
-#     mean_i, var_i = train_means[i], train_vars[i]
-#     src_img = image_dir[i]
-#     tgt_mean_img = str(mean_i) + "_m_" + src_img
-#     tgt_var_img = str(var_i) + "_v_" + src_img
-#
-#     cmd = "cp dataset/train/%s data_mean/%s" % (src_img, tgt_mean_img)
-#     os.system(cmd)
-#     cmd = "cp dataset/train/%s data_var/%s" % (src_img, tgt_var_img)
-#     os.system(cmd)
+def rmse(pred, gold):
+    score = np.mean((pred - gold) ** 2) ** 0.5
+    return score
 
 
-# fp1 = "submission_var.txt"
-# fp = "submission.txt"
-#
-# with open(fp1, "r") as f1:
-#     res1 = f1.readlines()
-#
-#     with open(fp, 'w') as f:
-#         for sp1 in res1:
-#             _mean, _var = sp1.split("\t")
-#             mean = 6.42169
-#             var = float(_var)
-#
-#             # print(str(round(mean, 5)) + '\t' + str(round(var, 5)))
-#             f.write(str(round(mean, 5))+'\t'+str(round(var, 5))+"\n")
-#
+def dist(mean_p, var_p, mean_g, var_g):
+    d_m = rmse(mean_p, mean_g)
+    d_v = rmse(var_p, var_g)
+    return 0.6 * d_m + 0.4 * d_v, d_m, d_v
+
+
+def ensemble(mean_s, var_s):
+    return sum(mean_s) / len(mean_s), sum(var_s) / len(var_s)
+
+
+def load_res(fps):
+    ms, vs = [], []
+    for fp in fps:
+        m, v = zip(*read_label(fp))
+        ms.append(np.array(m))
+        vs.append(np.array(v))
+        del m, v
+    return ms, vs
+
+
+def write(_mean, _var, tar):
+    with open(tar, "w") as f:
+        for m, v in zip(_mean, _var):
+            line = "%.5f\t%.5f\n" % (m, v)
+            f.write(line)
+            # print(line)
+
+
+gold = "dataset/p1.txt"
+fp_sub = "result/submission_final.txt"
+fp_tar = "result/submission.txt"
+fp_czz = "result/submission_czz_resnet_lrs_full.txt"
+fp_res = "result/submission_resnet_lrs_full_0.txt"
+fp_cnn = "result/submission_cnn_lrs_full_0.txt"
+fp_res_cnn = "result/submission_resnet_cnn_lrs_full_0.txt"
+fp_res_dis_reg_0 = "result/submission_resnet_lrs_dis_reg_full_0.txt"
+fp_res_dis_reg_1 = "result/submission_resnet_lrs_dis_reg_full_1.txt"
+fp_res_dis_reg_2 = "result/submission_resnet_lrs_dis_reg_full_2.txt"
+fp_res_cross_val_0 = "result/submission_resnet_lrs_0.txt"
+fp_res_cross_val_1 = "result/submission_resnet_lrs_1.txt"
+fp_res_cross_val_2 = "result/submission_resnet_lrs_2.txt"
+fp_res_fine_tune = "submission_resnet_lrs_fine_tune_0.txt"
+fp_res_knn_fine_tune = "result/submission_resnet_lrs_knn_fine_tune_0.txt"
+
+# fp_f_res = "submission_resnet_lrs_0.txt"
+# fp_f_cnn = "submission_cnn_lrs_0.txt"
+# fp_f_res_cnn = "submission_resnet_cnn_lrs_0.txt"
+# fp_f_res_dis_reg = "submission_resnet_lrs_dis_reg_0.txt"
+# fp_f_res_val = "submission_resnet_lrs_val_0.txt"
+
+fp_f_res = "submission_test_resnet_lrs_0.txt"
+fp_f_cnn = "submission_test_cnn_lrs_0.txt"
+fp_f_res_cnn = "submission_test_resnet_cnn_lrs_0.txt"
+fp_f_res_dis_reg = "submission_test_resnet_lrs_dis_reg_0.txt"
+fp_f_res_val = "submission_test_resnet_lrs_val_0.txt"
+
+fp_test_submission = "submission_test.txt"
+
+fp_f_test_1 = "dataset/resnet18_food_test.txt"
+fp_f_test_2 = "dataset/resnet18_imagenet_test.txt"
+fp_f_test = "dataset/resnet18_imagenet_test_fusion.txt"
+fp_f_eff = "dataset/efficientNetAllTrain_Public.txt"
+fp_f_dp = "dataset/simpleCNNDropout_Public.txt"
+
+fp_test = fp_sub
+fp_final = gold
+mean_f, var_f = zip(*read_label(fp_final))
+mean_t, var_t = zip(*read_label(fp_test))
+assert len(mean_f) == len(mean_t), (len(mean_f), len(mean_t))
+d, d_m, d_v = dist(np.array(mean_t), np.array(var_t), np.array(mean_f), np.array(var_f))
+print("%15s: %.5f, %.5f, %.5f" % ("submission(848)", d, d_m, d_v))
+
+tag = ""
+fp_list = [fp_test_submission]
+# fp_list = [fp_f_res, fp_f_cnn, fp_f_res_cnn, fp_f_res_dis_reg, fp_f_res_val]
+# fp_list = [fp_res, fp_cnn, fp_res_cnn, fp_res_dis_reg_0, fp_res_cross_val_0]
+mean_list, var_list = load_res(fp_list)
+mean, var = ensemble(mean_list, var_list)
+d, d_m, d_v = dist(np.array(mean), np.array(var), np.array(mean_f), np.array(var_f))
+print("%15s: %.5f, %.5f, %.5f" % (tag, d, d_m, d_v))
+# write(mean, var, "./submission_test.txt")
+
+
+
+
+
+
+
+
+
+

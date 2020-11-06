@@ -86,6 +86,7 @@ class CNN(nn.Module):
         self.max_pool2 = nn.MaxPool2d(3)
         self.max_pool3 = nn.MaxPool2d(3)
         self.avg_pool = nn.AvgPool2d(3)
+        self.dropout = nn.Dropout(p=0.5)
 
         d_in = 256
         d_out_mean = MEAN_CLS_NUM if DISCRETE_CLS else 1
@@ -115,6 +116,8 @@ class CNN(nn.Module):
         output = self.max_pool3(output)
         output = self.avg_pool(output)
         output = torch.flatten(output, start_dim=1)
+        output = self.dropout(output)
+
         res = self.mlp(output)
         if self.separate:
             return res
@@ -142,16 +145,16 @@ def run_epoch(_model, data_loader, tag, optimizer=None, mean_loss=None, var_loss
     for i, batch_data in enumerate(data_loader):
         if tag == "train" or tag == "val":
             _image_idx, _mean_idx, _var_idx = 0, 1, 2
-            image_batch = batch_data[_image_idx].to(device)
+            image_batch = batch_data[_image_idx].to(DEVICE)
             mean_gold_batch = batch_data[_mean_idx].unsqueeze(-1)
             var_gold_batch = batch_data[_var_idx].unsqueeze(-1)
             mean_gold.append(mean_gold_batch)
             var_gold.append(var_gold_batch)
-            mean_gold_batch = mean_gold_batch.to(device)
-            var_gold_batch = var_gold_batch.to(device)
+            mean_gold_batch = mean_gold_batch.to(DEVICE)
+            var_gold_batch = var_gold_batch.to(DEVICE)
 
         else:
-            image_batch = batch_data.to(device)
+            image_batch = batch_data.to(DEVICE)
 
         t += image_batch.shape[0]
         _bar.update(t)
@@ -202,8 +205,3 @@ def run_epoch(_model, data_loader, tag, optimizer=None, mean_loss=None, var_loss
             return _rmse_mean, _rmse_var
     else:
         return mean_pred, var_pred
-
-
-
-
-

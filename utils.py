@@ -1,11 +1,31 @@
 from const import *
 import torch
 import numpy as np
+import random
 
 
 def rmse(pred, gold):
     score = torch.sqrt(((pred - gold)**2).mean())
     return score
+
+
+def n_fold_split(_data_size, _val_fold_id=0, _fold_num=10):
+    fold_size = _data_size // _fold_num
+    ids = list(range(_data_size))
+    random.seed(2020)
+    random.shuffle(ids)
+    st, ed = 0, _data_size
+    st_val = _val_fold_id * fold_size
+    ed_val = st_val + fold_size
+    valid = ids[st_val:ed_val]
+    train = ids if USE_FULL_DATA else ids[st:st_val] + ids[ed_val:ed]
+    return train, valid
+
+
+def knn_split_valid():
+    valid_id = VALID_IDS_KNN
+    train_id = [i for i in range(3000) if i not in valid_id]
+    return train_id, valid_id
 
 
 def discrete_label(y, cat="mean"):
@@ -43,3 +63,4 @@ def post_process(mean, var):
         m[_i] = nearest(discrete_means, _m.item())
         v[_i] = nearest(discrete_vars, _v.item())
     return m, v
+
