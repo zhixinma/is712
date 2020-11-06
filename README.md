@@ -62,10 +62,9 @@ DISCRETE_REG = False  # use regression and map result into discrete_means/discre
 GPU_NUM = 0  # index of the gpu unit to use
 PREFIX = "resnet_lrs_val"  # model prefix
 ```
-
-For different model variants, you can just replace these variable with following setting:
+The final result is the average prediction of the five models, plsease refer to the report for model details. \
+To run different model variants, you can just replace these variables (on the top of ```const.py```) with the following settings. \
 Note that ```GPU_NUM``` should be replaced with the available one according to your situation.
-The final result is the average prediction of the following five models.
 
 **CNN**
 ```python
