@@ -13,6 +13,7 @@ from models import run_epoch
 from models import FoodNet
 from dataloader import ImgDataset
 from dataloader import read_img, read_label
+from dataloader import write
 from utils import n_fold_split, knn_split_valid
 os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU_NUM)
 
@@ -138,8 +139,4 @@ with torch.no_grad():
 if TOY:
     exit()
 
-with open(RES_PATH, 'w') as f:
-    for z1, z2 in zip(test_pred_mean, test_pred_var):
-        print (round(z1, ROUND_NUM), round(z2, ROUND_NUM))
-        f.write(str(round(z1, ROUND_NUM)) + '\t' + str(round(z2, ROUND_NUM)) + "\n")
-
+write(test_pred_mean, test_pred_var, RES_PATH)

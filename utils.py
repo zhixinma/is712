@@ -1,7 +1,8 @@
-from const import *
 import torch
 import numpy as np
 import random
+from progressbar import ProgressBar
+from const import *
 
 
 def rmse(pred, gold):
@@ -20,6 +21,27 @@ def n_fold_split(_data_size, _val_fold_id=0, _fold_num=10):
     valid = ids[st_val:ed_val]
     train = ids if USE_FULL_DATA else ids[st:st_val] + ids[ed_val:ed]
     return train, valid
+
+
+def knn_split(img_trn, img_tst):
+    def dist(sample, batch):
+        batch_size = batch.shape[0]
+        d = np.abs(batch - sample).reshape(batch_size, -1).mean(axis=1)
+        return d
+    trn_size, tst_size = len(img_trn), len(img_tst)
+    valid_score = {}
+    _bar = ProgressBar(max_value=tst_size)
+    for i in range(tst_size):
+        _bar.update(i+1)
+        dists = dist(img_tst[i], img_trn)
+        best_j = dists.argmin()
+        if best_j not in valid_score:
+            valid_score[best_j] = 1e10
+        valid_score[best_j] = dists[best_j] if dists[best_j] < valid_score[best_j] else valid_score[best_j]
+    top = [k for k in sorted(valid_score, key=valid_score.get)]
+    valid_id = top[:trn_size//10]
+    train_id = [i for i in range(trn_size) if i not in valid_id]
+    return train_id, valid_id
 
 
 def knn_split_valid():
@@ -63,4 +85,5 @@ def post_process(mean, var):
         m[_i] = nearest(discrete_means, _m.item())
         v[_i] = nearest(discrete_vars, _v.item())
     return m, v
+
 

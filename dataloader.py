@@ -2,11 +2,11 @@ import cv2
 import torch
 import numpy as np
 from torch.utils.data import Dataset
+from progressbar import ProgressBar
 import os
 from const import *
-from progressbar import ProgressBar
 from utils import discrete_label
-from utils import n_fold_split
+from utils import knn_split
 
 
 class ImgDataset(Dataset):
@@ -37,35 +37,11 @@ class ImgDataset(Dataset):
             return img
 
 
-class ImgDataset2(Dataset):
-    def __init__(self, filepath, transform, train=True, valid=False):
-        self.train = train
-        self.valid = valid
-        self.img = read_img(filepath, train=train)
-        self.transform = transform
-
-        if self.train:
-            self.mean_y, self.var_y, _, _, _ = zip(*read_label(filepath))
-            self.mean_y = np.array(self.mean_y)
-            self.var_y = np.array(self.var_y)
-
-        if self.valid:
-            train_ids, valid_ids = n_fold_split(len(self.img))
-            self.img = self.img[valid_ids]
-            self.mean_y = self.mean_y[valid_ids]
-            self.var_y = self.var_y[valid_ids]
-
-    def __len__(self):
-        return len(self.img)
-
-    def __getitem__(self, index):
-        img = self.transform(self.img[index])
-        if not self.train:
-            return img
-
-        mean_y = self.mean_y[index]
-        var_y = self.var_y[index]
-        return img, mean_y, var_y
+def write(mean, var, tar):
+    with open(tar, "w") as f:
+        for m, v in zip(mean, var):
+            line = "%.5f\t%.5f\n" % (m, v)
+            f.write(line)
 
 
 def read_img(path, train=False):
@@ -92,31 +68,11 @@ def read_label(path):
     return y
 
 
-def knn_split(train, test):
-    def dist(sample, batch):
-        batch_size = batch.shape[0]
-        d = np.abs(batch - sample).reshape(batch_size, -1).mean(axis=1)
-        return d
-    img_trn = read_img(train, train=True)
-    img_tst = read_img(test, train=False)
-    trn_size, tst_size = len(img_trn), len(img_tst)
-    valid_score = {}
-    _bar = ProgressBar(max_value=tst_size)
-    for i in range(tst_size):
-        _bar.update(i+1)
-        dists = dist(img_tst[i], img_trn)
-        best_j = dists.argmin()
-        if best_j not in valid_score:
-            valid_score[best_j] = 1e10
-        valid_score[best_j] = dists[best_j] if dists[best_j] < valid_score[best_j] else valid_score[best_j]
-    top = [k for k in sorted(valid_score, key=valid_score.get)]
-    valid_id = top[:trn_size//10]
-    train_id = [i for i in range(trn_size) if i not in valid_id]
-    return train_id, valid_id
-
-
 if __name__ == "__main__":
-    train_ids, valid_ids = knn_split(TRAIN_DIR, VALID_DIR)
+    img_train = read_img(TRAIN_DIR, train=True)
+    img_test = read_img(VALID_DIR, train=False)
+    train_ids, valid_ids = knn_split(img_train, img_test)
+
     print(train_ids)
     print(valid_ids)
 
