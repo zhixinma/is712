@@ -8,8 +8,9 @@ result/
 checkpoint/
 
 v2_main.py
-*.sh
+ensemble.py
 submission*.txt
+*.sh
 
 # IDE
 codestyle
