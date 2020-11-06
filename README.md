@@ -1,5 +1,6 @@
 <h1 style="font-size:50pt" align="center">Food Rating with Residual Network</h2>
-<p align="center">Group 13, IS712, 2020 Fall</h2>
+<p align="center">Zhixin Ma, Lei Wang and Shilton Jonatan Salindeho</p>
+<p align="center">Group 13, IS712 2020 Fall</p>
 
 
 ## Requirements
@@ -45,7 +46,7 @@ is712/
 8. ```utils.py```: Utility functions.
 
 ### Get Start
-To run our rating system, simply following these steps in your Shell interactive interpreter:
+To run our rating system, simply follow these steps in the working dir ```/PATH/TO/is712```:
 ```shell
 >>> python3 main.py  # train the model and save parameters in '/PATH/TO/is712/models/'
 >>> python3 inference.py  # do inference on test dataset
@@ -63,7 +64,7 @@ GPU_NUM = 0  # index of the gpu unit to use
 PREFIX = "resnet_lrs_val"  # model prefix
 ```
 The final result is the average prediction of the five models, plsease refer to the report for model details. \
-To run different model variants, you can just replace these variables (on the top of ```const.py```) with the following settings. \
+To run infernece with different model variants, you can just replace these variables (on the top of ```const.py```) with the following settings. \
 Note that ```GPU_NUM``` should be replaced with the available one according to your situation.
 
 **CNN**
